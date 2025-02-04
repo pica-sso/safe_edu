@@ -94,7 +94,7 @@ class SafeEdu:
         click_element = self.driver.find_element(By.XPATH, x_path)
         click_element.click()
         click_element.send_keys(input)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     def quit(self):
         time.sleep(5)
