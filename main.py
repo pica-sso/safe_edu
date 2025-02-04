@@ -52,6 +52,7 @@ class SafeEdu:
                         button.click()
                         time.sleep(0.5)
                         self.click('//*[@id="play"]')
+                        self.wait_for_progress_and_click()
                         break
                     elif ("fnChkTestPsb" in onclick_attribute) and ('N' in onclick_attribute):
                         print(f'시험보기 버튼을 찾았습니다: {button}')
@@ -61,6 +62,7 @@ class SafeEdu:
                         self.click('//*[@id="myclass-edu-attn-window"]/div[2]/div/button[2]')
                         time.sleep(0.5)
                         # self.log_network_traffic()
+                        time.sleep(100)
         except Exception as e:
             print(e)
 
