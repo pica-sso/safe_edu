@@ -12,7 +12,7 @@ import time
 class SafeEdu:
     def __init__(self):
         self.service = Service(
-            executable_path=r'C:\source\seyeong_draft\chromedriver-win64\chromedriver.exe')  # ChromeDriver 경로 지정
+            executable_path=r'.\chromedriver-win64\chromedriver.exe')  # ChromeDriver 경로 지정
         chrome_options = Options()
         self.driver = webdriver.Chrome(service=self.service, options=chrome_options)
         self.open_site()
