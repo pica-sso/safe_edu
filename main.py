@@ -26,13 +26,18 @@ class SafeEdu:
     def log_in(self):
         global USERID
         global PASSWORD
-        self.input('//*[@id="rgst_num1"]', '8148500288')
-        self.click('//*[@id="login_form_box"]/a')
-        self.input('//*[@id="user_id"]', USERID)      # for user : ID
-        self.input('//*[@id="user_pw"]', PASSWORD)      # for user : PW
-        self.click('//*[@id="loginForm"]/a[1]')
-        self.click('//*[@id="b2ccStuContId"]/div/div[2]/a')
-        self.click('//*[@id="eduaplList"]/li/div/div[4]/button[1]')
+        try:
+            self.input('//*[@id="rgst_num1"]', '8148500288')
+            self.click('//*[@id="login_form_box"]/a')
+            self.input('//*[@id="user_id"]', USERID)      # for user : ID
+            self.input('//*[@id="user_pw"]', PASSWORD)      # for user : PW
+            self.click('//*[@id="loginForm"]/a[1]')
+            self.click('//*[@id="b2ccStuContId"]/div/div[2]/a')
+            self.click('//*[@id="eduaplList"]/li/div/div[4]/button[1]')
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
     def find_next_study_button(self):
         try:
@@ -107,9 +112,9 @@ class SafeEdu:
 
 if __name__ == "__main__":
     SE = SafeEdu()
-    SE.log_in()
-    SE.find_next_study_button()
-    SE.find_next_study_button()
+    if SE.log_in():
+        SE.find_next_study_button()
+        SE.find_next_study_button()
 
     time.sleep(30)
     SE.quit()
