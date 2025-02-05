@@ -8,11 +8,12 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 import json
 import time
 
+USERID = ""
+PASSWORD = ""
 
 class SafeEdu:
     def __init__(self):
-        self.service = Service(
-            executable_path=r'.\chromedriver-win64\chromedriver.exe')  # ChromeDriver 경로 지정
+        self.service = Service(executable_path=r'.\chromedriver-win64\chromedriver.exe')
         chrome_options = Options()
         self.driver = webdriver.Chrome(service=self.service, options=chrome_options)
         self.open_site()
@@ -23,18 +24,19 @@ class SafeEdu:
         time.sleep(2)
 
     def log_in(self):
+        global USERID
+        global PASSWORD
         self.input('//*[@id="rgst_num1"]', '8148500288')
         self.click('//*[@id="login_form_box"]/a')
-        self.input('//*[@id="user_id"]', 'id')      # for user : ID
-        self.input('//*[@id="user_pw"]', 'pw')      # for user : PW
+        self.input('//*[@id="user_id"]', USERID)      # for user : ID
+        self.input('//*[@id="user_pw"]', PASSWORD)      # for user : PW
         self.click('//*[@id="loginForm"]/a[1]')
-
-    def enter_classroom(self):
         self.click('//*[@id="b2ccStuContId"]/div/div[2]/a')
         self.click('//*[@id="eduaplList"]/li/div/div[4]/button[1]')
 
     def find_next_study_button(self):
         try:
+            time.sleep(1)
             target_argument = 'stdEdu'
             button_1st = self.driver.find_element(By.XPATH, '//*[@id="trnAList"]/tr[2]/td[5]/button')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", button_1st)
@@ -61,7 +63,7 @@ class SafeEdu:
                         self.click('//*[@id="myclass-edu-attn-window"]/div[1]/label/span')
                         self.click('//*[@id="myclass-edu-attn-window"]/div[2]/div/button[2]')
                         time.sleep(0.5)
-                        # self.log_network_traffic()
+                        self.log_network_traffic()
                         time.sleep(100)
         except Exception as e:
             print(e)
@@ -106,9 +108,8 @@ class SafeEdu:
 if __name__ == "__main__":
     SE = SafeEdu()
     SE.log_in()
-    SE.enter_classroom()
     SE.find_next_study_button()
-    SE.wait_for_progress_and_click()
+    SE.find_next_study_button()
 
     time.sleep(30)
     SE.quit()
