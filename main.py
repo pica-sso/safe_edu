@@ -7,12 +7,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.webdriver import WebDriver
 import json
 import time
+from get_answer import GetAnswer
 
 USERID = ""
 PASSWORD = ""
 
 class SafeEdu:
     def __init__(self):
+        self.get_answer = GetAnswer()
         self.service = Service(executable_path=r'.\chromedriver-win64\chromedriver.exe')
         chrome_options = Options()
         self.driver = webdriver.Chrome(service=self.service, options=chrome_options)
@@ -68,7 +70,7 @@ class SafeEdu:
                         self.click('//*[@id="myclass-edu-attn-window"]/div[1]/label/span')
                         self.click('//*[@id="myclass-edu-attn-window"]/div[2]/div/button[2]')
                         time.sleep(0.5)
-                        self.log_network_traffic()
+                        self.get_answer_list()
                         time.sleep(100)
         except Exception as e:
             print(e)
@@ -93,17 +95,29 @@ class SafeEdu:
         except Exception as e:
             print(f'오류 발생: {e}')
 
+    def get_answer_list(self):
+        temp = input("Copy json response in response.txt")
+        self.get_answer.run()
+        ans_list = self.get_answer.answer_list
+        # click answer
+
     def click(self, x_path=''):
-        click_element = self.driver.find_element(By.XPATH, x_path)
-        self.driver.execute_script("arguments[0].scrollIntoView();", click_element)
-        click_element.click()
-        time.sleep(0.5)
+        try:
+            click_element = self.driver.find_element(By.XPATH, x_path)
+            self.driver.execute_script("arguments[0].scrollIntoView();", click_element)
+            click_element.click()
+            time.sleep(0.5)
+        except:
+            return False
 
     def input(self, x_path='', input=''):
-        click_element = self.driver.find_element(By.XPATH, x_path)
-        click_element.click()
-        click_element.send_keys(input)
-        time.sleep(0.1)
+        try:
+            click_element = self.driver.find_element(By.XPATH, x_path)
+            click_element.click()
+            click_element.send_keys(input)
+            time.sleep(0.1)
+        except:
+            return False
 
     def quit(self):
         time.sleep(5)
