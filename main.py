@@ -96,7 +96,7 @@ class SafeEdu:
             print(f'오류 발생: {e}')
 
     def get_answer_list(self):
-        temp = input("Copy json response in response.txt")
+        temp = input("Copy json response in response.txt")  # wait until copy json answer
         self.get_answer.run()
         ans_list = self.get_answer.answer_list
         # click answer
@@ -104,10 +104,23 @@ class SafeEdu:
     def click(self, x_path=''):
         try:
             click_element = self.driver.find_element(By.XPATH, x_path)
-            self.driver.execute_script("arguments[0].scrollIntoView();", click_element)
+            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+                                       click_element)
             click_element.click()
             time.sleep(0.5)
-        except:
+        except Exception as e:
+            print(f"[ERROR] Failed to click on element: {e}")
+            return False
+
+    def click_id(self, id=''):
+        try:
+            click_element = self.driver.find_element(By.ID, id)
+            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+                                       click_element)
+            click_element.click()
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"[ERROR] Failed to click on element: {e}")
             return False
 
     def input(self, x_path='', input=''):
