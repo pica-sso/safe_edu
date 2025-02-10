@@ -1,4 +1,5 @@
 from browsermobproxy import Server
+from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import json
 from selenium import webdriver
@@ -22,6 +23,8 @@ PASSWORD = os.environ.get('PASSWORD')
 caps = DesiredCapabilities.CHROME
 caps['goog:loggingPrefs'] = {'performance': 'ALL'}
 '''윗 두줄은 실행파일 최상단에 위치하게 함'''
+
+
 class SafeEdu:
     def __init__(self):
         self.get_answer = GetAnswer()
@@ -45,6 +48,7 @@ class SafeEdu:
         time.sleep(0.1)
         self.driver.execute_script("document.body.style.zoom='75%'")
         time.sleep(0.1)
+
     def zoom_in(self):
         time.sleep(0.1)
         self.driver.execute_script("document.body.style.zoom='100%'")
@@ -56,8 +60,8 @@ class SafeEdu:
         try:
             self.input('//*[@id="rgst_num1"]', '8148500288')
             self.click('//*[@id="login_form_box"]/a')
-            self.input('//*[@id="user_id"]', USERID)      # for user : ID
-            self.input('//*[@id="user_pw"]', PASSWORD)      # for user : PW
+            self.input('//*[@id="user_id"]', USERID)  # for user : ID
+            self.input('//*[@id="user_pw"]', PASSWORD)  # for user : PW
             self.click('//*[@id="loginForm"]/a[1]')
             self.zoom_out()
 
@@ -104,15 +108,15 @@ class SafeEdu:
                         time.sleep(1)
                         self.click('//*[@id="myclass-edu-attn-window"]/div[2]/div/button[2]')
                         time.sleep(1)
-                        # self.get_test_data()
-                        self.get_answer_list()
+                        self.get_network_log()
                         self.submit_test()
                         time.sleep(0.5)
                         time.sleep(100)
         except Exception as e:
             print(e)
 
-    def get_test_data(self):
+    def get_network_log(self):
+        time.sleep(1)
         self.logs = self.driver.get_log("performance")
 
         for log in self.logs:
@@ -121,23 +125,42 @@ class SafeEdu:
                 method = network_message["message"]["method"]
 
                 if method == "Network.responseReceived":
-                    response_data = network_message["message"]["params"]["response"]
-                    print("Response Data:", response_data)
+                    request_id = network_message["message"]["params"]["requestId"]
+                    resp = self.driver.execute_cdp_cmd('Network.getResponseBody', {'requestId': request_id})
+                    data = resp["body"]
+                    print(type(data))
+                    with open("response.txt", 'w', encoding='utf-8') as file:
+                        file.write(data)
+        time.sleep(1)
+        print("response write finished")
 
     def submit_test(self):
+        self.zoom_out()
         ul = self.driver.find_element(By.ID, "examList")
         li_list = ul.find_elements(By.TAG_NAME, "li")
-
+        count = 0
         answer_list = self.get_answer_list()
         for index, li in enumerate(li_list):
-            exam_id = li.get_attribute("id")
-            exam_cont = li.find_element(By.XPATH,f'//*[@id="testExamNum_{exam_id}"]/div[2]')
-            exam_btn_list = exam_cont.find_element(By.XPATH,f'//*[@id="testExamNum_{exam_id}"]/div[2]/div')
-            answer_button = exam_btn_list.find_element(By.ID,f'examNum_{exam_id}_{answer_list[index]}')
-            print(answer_button.text)
+            # exam_id = li.get_attribute("id")
+            exam_cont = li.find_element(By.CLASS_NAME, f'exam-cont')
+            exam_btn_list = exam_cont.find_element(By.CLASS_NAME, f'exam-optlst')
+            label_list = exam_btn_list.find_elements(By.TAG_NAME, "label")
+            ans_btn = label_list[answer_list[index]]
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", exam_cont)
+            time.sleep(0.5)
+            ans_btn.click()
+            count += 1
 
+        if count == 7:
+            result_btn = self.driver.find_element(By.ID, "examRlt")
+            result_btn.click()
+            # 알림 창 전환
+            alert = Alert(self.driver)
+            # 알림 창의 확인 버튼 클릭
+            alert.accept()
+            # 제출 완료
+            alert.accept()
 
-        pass
     def wait_for_progress_and_click(self):
         try:
             progress_bar = self.driver.find_element(By.ID, "progress-bar")
@@ -159,7 +182,7 @@ class SafeEdu:
             print(f'오류 발생: {e}')
 
     def get_answer_list(self):
-        temp = input("Copy json response in response.txt")  # wait until copy json answer
+        # temp = input("Copy json response in response.txt")  # wait until copy json answer
         self.get_answer.run()
         ans_list = self.get_answer.answer_list
         # click answer

@@ -7,7 +7,7 @@ class GetAnswer:
 
     def run(self):
         self.insert_response()
-        self.clear()
+        # self.clear()
 
     def insert_response(self):
         with open("response.txt", 'r', encoding='utf-8') as file:
@@ -23,7 +23,8 @@ class GetAnswer:
             for item in data['data']['items']:
                 for exam in item['examList']:
                     if exam['ANSR_YN'] == 'Y':
-                        self.answer_list.append(exam['EXAM_NUM'])
+                        self.answer_list.append(exam['EXAM_NUM']-1)
+            # print(self.answer_list)
         except Exception as ex:
             print("response.txt에 알맞게 복사해 넣었는지 확인하고 저장한뒤 y를 눌러주세요")
             y = input()
