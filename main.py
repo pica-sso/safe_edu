@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.webdriver import WebDriver
 import json
@@ -22,7 +23,6 @@ PASSWORD = os.environ.get('PASSWORD')
 '''크롬 로그 requests 만들기'''
 caps = DesiredCapabilities.CHROME
 caps['goog:loggingPrefs'] = {'performance': 'ALL'}
-'''윗 두줄은 실행파일 최상단에 위치하게 함'''
 
 
 class SafeEdu:
@@ -34,10 +34,10 @@ class SafeEdu:
         # chrome_options.add_argument('--headless')
         # chrome_options.add_argument('--disable-gpu')
         chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})  # 필수
-
         self.driver = webdriver.Chrome(service=self.service, options=chrome_options)
         self.open_site()
         self.logs = None
+        self.actions = ActionChains(self.driver)  # 스크롤 위치 조정 가능 객체
 
     def open_site(self):
         self.driver.get('https://corp.edukisa.or.kr/home.do#')
@@ -76,30 +76,37 @@ class SafeEdu:
     def find_next_study_button(self):
         try:
             time.sleep(1)
-            self.zoom_out()
             target_argument = 'stdEdu'
-            button_1st = self.driver.find_element(By.XPATH, '//*[@id="trnAList"]/tr[2]/td[5]/button')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", button_1st)
-
-            buttons = self.driver.find_elements(By.XPATH, "//button[@type='button']")
-
-            for button in buttons:
-                self.driver.execute_script("arguments[0].scrollIntoView(true);", button)
+            buttons = self.driver.find_element(By.ID,"trnAList").find_elements(By.TAG_NAME,"button")
+            self.zoom_out()
+            for index,button in enumerate(buttons):
                 time.sleep(0.5)
-                self.zoom_out()
                 onclick_attribute = button.get_attribute('onclick')
-                print(onclick_attribute)
                 if onclick_attribute:
                     if (target_argument in onclick_attribute) and ('N' in onclick_attribute):
                         print(f'학습하기 버튼을 찾았습니다: {button}')
+                        try:
+                            self.actions = ActionChains(self.driver)
+                            self.actions.move_to_element(button).perform()
+                        except Exception as E:
+                            for i in range(index):
+                                self.driver.execute_script("arguments[0].scrollIntoView(true);", buttons[i])
+                                time.sleep(0.2)
                         button.click()
                         time.sleep(0.5)
-                        self.zoom_in()
+                        self.zoom_out()
                         self.click('//*[@id="play"]')
                         self.wait_for_progress_and_click()
                         break
                     elif ("fnChkTestPsb" in onclick_attribute) and ('N' in onclick_attribute):
                         print(f'시험보기 버튼을 찾았습니다: {button}')
+                        try:
+                            self.actions = ActionChains(self.driver)
+                            self.actions.move_to_element(button).perform()
+                        except Exception as E:
+                            for i in range(index):
+                                self.driver.execute_script("arguments[0].scrollIntoView(true);", buttons[i])
+                                time.sleep(0.2)
                         button.click()
                         time.sleep(0.8)
                         self.zoom_out()
@@ -135,31 +142,42 @@ class SafeEdu:
         print("response write finished")
 
     def submit_test(self):
-        self.zoom_out()
         ul = self.driver.find_element(By.ID, "examList")
         li_list = ul.find_elements(By.TAG_NAME, "li")
         count = 0
         answer_list = self.get_answer_list()
+        print("답을 받아왔습니다.", answer_list)
         for index, li in enumerate(li_list):
             # exam_id = li.get_attribute("id")
             exam_cont = li.find_element(By.CLASS_NAME, f'exam-cont')
             exam_btn_list = exam_cont.find_element(By.CLASS_NAME, f'exam-optlst')
             label_list = exam_btn_list.find_elements(By.TAG_NAME, "label")
             ans_btn = label_list[answer_list[index]]
-            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", exam_cont)
+            self.actions = ActionChains(self.driver)
+            self.actions.move_to_element(ans_btn).perform()
             time.sleep(0.5)
             ans_btn.click()
             count += 1
 
         if count == 7:
             result_btn = self.driver.find_element(By.ID, "examRlt")
+            self.actions = ActionChains(self.driver)
+            self.actions.move_to_element(result_btn).perform()
             result_btn.click()
             # 알림 창 전환
             alert = Alert(self.driver)
-            # 알림 창의 확인 버튼 클릭
+            # 첫 번째 알람 수락
+            alert = Alert(self.driver)
             alert.accept()
-            # 제출 완료
+            print("첫 번째 알람 수락")
+            time.sleep(0.5)
+            # 두 번째 알람 수락
+            alert = Alert(self.driver)  # error 발생
             alert.accept()
+            time.sleep(0.5)
+            print("두 번째 알람 수락")
+
+            print("제출 성공")
 
     def wait_for_progress_and_click(self):
         try:
@@ -173,10 +191,18 @@ class SafeEdu:
                     break
                 time.sleep(1)
 
-            close_button = self.driver.find_element(By.XPATH, '//*[@aria-label="Close"]')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", close_button)
-            close_button.click()
-            print('Close 버튼을 클릭했습니다.')
+            close_button = self.driver.find_element(By.XPATH, '/html/body/div[7]/div[1]/div/button')
+            print("학습을 종료합니다.")
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView(true);", close_button)
+                self.actions = ActionChains(self.driver)
+                self.actions.move_to_element(close_button)
+                close_button.click()
+                print('Close 버튼을 클릭했습니다.')
+            except Exception as e:
+                print("디버깅")
+
+
 
         except Exception as e:
             print(f'오류 발생: {e}')
