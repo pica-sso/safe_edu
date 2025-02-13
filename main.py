@@ -14,6 +14,7 @@ import time
 from get_answer import GetAnswer
 from dotenv import load_dotenv
 import os
+import inspect
 
 # load .env
 load_dotenv()
@@ -70,7 +71,7 @@ class SafeEdu:
             self.click('//*[@id="eduaplList"]/li/div/div[4]/button[1]')
             return True
         except Exception as e:
-            print(e)
+            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
             return False
 
     def find_next_study_button(self):
@@ -125,7 +126,7 @@ class SafeEdu:
 
             return study_or_test_flag
         except Exception as e:
-            print(e)
+            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
             self.driver.refresh()
             return False
 
@@ -183,9 +184,9 @@ class SafeEdu:
                 alert.accept()
                 time.sleep(1)
                 print("두 번째 알람 수락")
-
                 print("제출 성공")
-            except:
+            except Exception as e:
+                self.print_error_msg(inspect.currentframe().f_code.co_name, e)
                 self.driver.refresh()
 
     def wait_for_progress_and_click(self):
@@ -208,14 +209,11 @@ class SafeEdu:
                 self.actions.move_to_element(close_button)
                 close_button.click()
                 print('Close 버튼을 클릭했습니다.')
-            except Exception as e:
-                print("디버깅")
+            except Exception as err:
+                self.print_error_msg(inspect.currentframe().f_code.co_name, f"close button click fail. {err}")
                 self.driver.refresh()
-
-
-
         except Exception as e:
-            print(f'오류 발생: {e}')
+            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
 
     def get_answer_list(self):
         # temp = input("Copy json response in response.txt")  # wait until copy json answer
@@ -232,7 +230,7 @@ class SafeEdu:
             click_element.click()
             time.sleep(0.5)
         except Exception as e:
-            print(f"[ERROR] Failed to click on element: {e}")
+            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
             return False
 
     def click_id(self, id=''):
@@ -243,7 +241,7 @@ class SafeEdu:
             click_element.click()
             time.sleep(0.5)
         except Exception as e:
-            print(f"[ERROR] Failed to click on element: {e}")
+            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
             return False
 
     def input(self, x_path='', input=''):
@@ -258,6 +256,10 @@ class SafeEdu:
     def quit(self):
         time.sleep(5)
         self.driver.quit()
+
+    @staticmethod
+    def print_error_msg(func_name, msg):
+        print(f"[ERROR] {func_name} : {msg}")
 
 
 if __name__ == "__main__":
