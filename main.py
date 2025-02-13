@@ -42,17 +42,17 @@ class SafeEdu:
     def open_site(self):
         self.driver.get('https://corp.edukisa.or.kr/home.do#')
         self.driver.maximize_window()
-        time.sleep(2)
+        time.sleep(2.5)
 
     def zoom_out(self):
-        time.sleep(0.1)
+        time.sleep(1)
         self.driver.execute_script("document.body.style.zoom='75%'")
-        time.sleep(0.1)
+        time.sleep(1)
 
     def zoom_in(self):
-        time.sleep(0.1)
+        time.sleep(1)
         self.driver.execute_script("document.body.style.zoom='100%'")
-        time.sleep(0.1)
+        time.sleep(1)
 
     def log_in(self):
         global USERID
@@ -79,12 +79,14 @@ class SafeEdu:
             target_argument = 'stdEdu'
             buttons = self.driver.find_element(By.ID,"trnAList").find_elements(By.TAG_NAME,"button")
             self.zoom_out()
+            study_or_test_flag = False
             for index,button in enumerate(buttons):
-                time.sleep(0.5)
+                time.sleep(1)
                 onclick_attribute = button.get_attribute('onclick')
                 if onclick_attribute:
                     if (target_argument in onclick_attribute) and ('N' in onclick_attribute):
                         print(f'학습하기 버튼을 찾았습니다: {button}')
+                        study_or_test_flag = True
                         try:
                             self.actions = ActionChains(self.driver)
                             self.actions.move_to_element(button).perform()
@@ -93,12 +95,12 @@ class SafeEdu:
                                 self.driver.execute_script("arguments[0].scrollIntoView(true);", buttons[i])
                                 time.sleep(0.2)
                         button.click()
-                        time.sleep(0.5)
+                        time.sleep(1)
                         self.zoom_out()
                         self.click('//*[@id="play"]')
                         self.wait_for_progress_and_click()
                         break
-                    elif ("fnChkTestPsb" in onclick_attribute) and ('N' in onclick_attribute):
+                    elif ("fnChkTestPsb" in onclick_attribute) and button.accessible_name == "시험보기":
                         print(f'시험보기 버튼을 찾았습니다: {button}')
                         try:
                             self.actions = ActionChains(self.driver)
@@ -108,7 +110,7 @@ class SafeEdu:
                                 self.driver.execute_script("arguments[0].scrollIntoView(true);", buttons[i])
                                 time.sleep(0.2)
                         button.click()
-                        time.sleep(0.8)
+                        time.sleep(1)
                         self.zoom_out()
                         time.sleep(1)
                         self.click('//*[@id="myclass-edu-attn-window"]/div[1]/label/span')
@@ -117,10 +119,15 @@ class SafeEdu:
                         time.sleep(1)
                         self.get_network_log()
                         self.submit_test()
-                        time.sleep(0.5)
-                        time.sleep(100)
+                        time.sleep(1)
+                        time.sleep(2.5)
+                        study_or_test_flag = True
+
+            return study_or_test_flag
         except Exception as e:
             print(e)
+            self.driver.refresh()
+            return False
 
     def get_network_log(self):
         time.sleep(1)
@@ -146,6 +153,7 @@ class SafeEdu:
         li_list = ul.find_elements(By.TAG_NAME, "li")
         count = 0
         answer_list = self.get_answer_list()
+        answer_list[-1] = 1 #오답 만들기
         print("답을 받아왔습니다.", answer_list)
         for index, li in enumerate(li_list):
             # exam_id = li.get_attribute("id")
@@ -155,7 +163,7 @@ class SafeEdu:
             ans_btn = label_list[answer_list[index]]
             self.actions = ActionChains(self.driver)
             self.actions.move_to_element(ans_btn).perform()
-            time.sleep(0.5)
+            time.sleep(1)
             ans_btn.click()
             count += 1
 
@@ -164,20 +172,21 @@ class SafeEdu:
             self.actions = ActionChains(self.driver)
             self.actions.move_to_element(result_btn).perform()
             result_btn.click()
-            # 알림 창 전환
-            alert = Alert(self.driver)
-            # 첫 번째 알람 수락
-            alert = Alert(self.driver)
-            alert.accept()
-            print("첫 번째 알람 수락")
-            time.sleep(0.5)
-            # 두 번째 알람 수락
-            alert = Alert(self.driver)  # error 발생
-            alert.accept()
-            time.sleep(0.5)
-            print("두 번째 알람 수락")
+            try:
+                # 첫 번째 알람 수락
+                alert = Alert(self.driver)
+                alert.accept()
+                print("첫 번째 알람 수락")
+                time.sleep(1)
+                # 두 번째 알람 수락
+                alert = Alert(self.driver)  # error 발생
+                alert.accept()
+                time.sleep(1)
+                print("두 번째 알람 수락")
 
-            print("제출 성공")
+                print("제출 성공")
+            except:
+                self.driver.refresh()
 
     def wait_for_progress_and_click(self):
         try:
@@ -191,7 +200,7 @@ class SafeEdu:
                     break
                 time.sleep(1)
 
-            close_button = self.driver.find_element(By.XPATH, '/html/body/div[7]/div[1]/div/button')
+            close_button = self.driver.find_element(By.XPATH, "/html/body/div[11]/div[1]/div/button/span")
             print("학습을 종료합니다.")
             try:
                 self.driver.execute_script("arguments[0].scrollIntoView(true);", close_button)
@@ -201,6 +210,7 @@ class SafeEdu:
                 print('Close 버튼을 클릭했습니다.')
             except Exception as e:
                 print("디버깅")
+                self.driver.refresh()
 
 
 
@@ -252,9 +262,10 @@ class SafeEdu:
 
 if __name__ == "__main__":
     SE = SafeEdu()
-    SE.zoom_out()
     if SE.log_in():
-        SE.find_next_study_button()
+        a = True
+        while a:
+            a = SE.find_next_study_button()
         # SE.find_next_study_button()
 
     time.sleep(30)
