@@ -1,14 +1,10 @@
-from browsermobproxy import Server
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-import json
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.webdriver import WebDriver
 import json
 import time
 from get_answer import GetAnswer
@@ -31,9 +27,9 @@ class SafeEdu:
         self.get_answer = GetAnswer()
         self.service = Service(executable_path=r'.\chromedriver-win64\chromedriver.exe')
         chrome_options = Options()
-        # chrome_options.add_argument("--auto-open-devtools-for-tabs")
-        # chrome_options.add_argument('--headless')
-        # chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument("--auto-open-devtools-for-tabs")
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--disable-gpu')
         chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})  # 필수
         self.driver = webdriver.Chrome(service=self.service, options=chrome_options)
         self.open_site()
