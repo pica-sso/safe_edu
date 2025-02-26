@@ -40,6 +40,8 @@ Selenium WebDriver와 Chrome을 사용하여 브라우저를 자동화하며,
     ```ini
     USERID=사용자아이디
     PASSWORD=비밀번호
+    SITEURL=사이트 url
+    BUSINESS_NUM=사업자번호
     ```
    
 ## 사용 방법
