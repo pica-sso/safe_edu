@@ -14,9 +14,11 @@ import inspect
 
 # load .env
 load_dotenv()
+USERID = os.environ.get("USERID")
+PASSWORD = os.environ.get("PASSWORD")
+SITEURL = os.environ.get("SITEURL")
+BUSINESS_NUM = os.environ.get("BUSINESS_NUM")
 
-USERID = os.environ.get('USERID')
-PASSWORD = os.environ.get('PASSWORD')
 '''크롬 로그 requests 만들기'''
 caps = DesiredCapabilities.CHROME
 caps['goog:loggingPrefs'] = {'performance': 'ALL'}
@@ -27,17 +29,19 @@ class SafeEdu:
         self.get_answer = GetAnswer()
         self.service = Service(executable_path=r'.\chromedriver-win64\chromedriver.exe')
         chrome_options = Options()
-        chrome_options.add_argument("--auto-open-devtools-for-tabs")
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--disable-gpu')
+        # chrome_options.add_argument("--auto-open-devtools-for-tabs")
+        # chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--disable-gpu')
         chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})  # 필수
         self.driver = webdriver.Chrome(service=self.service, options=chrome_options)
         self.open_site()
         self.logs = None
         self.actions = ActionChains(self.driver)  # 스크롤 위치 조정 가능 객체
+        self.debug_mode = False
 
     def open_site(self):
-        self.driver.get('https://corp.edukisa.or.kr/home.do#')
+        global SITEURL
+        self.driver.get(SITEURL)
         self.driver.maximize_window()
         time.sleep(2.5)
 
@@ -54,20 +58,27 @@ class SafeEdu:
     def log_in(self):
         global USERID
         global PASSWORD
+        global BUSINESS_NUM
         try:
-            self.input('//*[@id="rgst_num1"]', '8148500288')
+            self.input('//*[@id="rgst_num1"]', BUSINESS_NUM)
             self.click('//*[@id="login_form_box"]/a')
             self.input('//*[@id="user_id"]', USERID)  # for user : ID
             self.input('//*[@id="user_pw"]', PASSWORD)  # for user : PW
             self.click('//*[@id="loginForm"]/a[1]')
             self.zoom_out()
+        except Exception as e:
+            self.print_error_msg(inspect.currentframe().f_code.co_name, f"Fail to login. {e}")
+            return False
 
-            self.click('//*[@id="b2ccStuContId"]/div/div[2]/a')
+    def find_edu(self):
+        try:
+            if not self.click('//*[@id="b2ccStuContId"]/div/div[2]/a'):
+                raise False
             self.zoom_out()
             self.click('//*[@id="eduaplList"]/li/div/div[4]/button[1]')
             return True
         except Exception as e:
-            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
+            self.print_error_msg(inspect.currentframe().f_code.co_name, f"Fail to find lecture. {e}")
             return False
 
     def find_next_study_button(self):
@@ -226,7 +237,8 @@ class SafeEdu:
             click_element.click()
             time.sleep(0.5)
         except Exception as e:
-            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
+            if self.debug_mode:
+                self.print_error_msg(inspect.currentframe().f_code.co_name, e)
             return False
 
     def click_id(self, id=''):
@@ -237,7 +249,8 @@ class SafeEdu:
             click_element.click()
             time.sleep(0.5)
         except Exception as e:
-            self.print_error_msg(inspect.currentframe().f_code.co_name, e)
+            if self.debug_mode:
+                self.print_error_msg(inspect.currentframe().f_code.co_name, e)
             return False
 
     def input(self, x_path='', input=''):
@@ -261,10 +274,11 @@ class SafeEdu:
 if __name__ == "__main__":
     SE = SafeEdu()
     if SE.log_in():
-        a = True
-        while a:
-            a = SE.find_next_study_button()
-        # SE.find_next_study_button()
+        if SE.find_edu():
+            a = True
+            while a:
+                a = SE.find_next_study_button()
+            # SE.find_next_study_button()
 
     time.sleep(30)
     SE.quit()
